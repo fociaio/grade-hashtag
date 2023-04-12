@@ -62,10 +62,10 @@ class Predictor(BasePredictor):
         sim_score = self.get_similarity(concept, hashtags_cleaned)
         if sim_score >= 0.6:
             grade = self.hashtag_model.predict((input_id,attention_mask))[0][0]*10*369
-            response_dict = {'hashtags': hashtags_list,'score': float(grade), 'context': 1, 'contextScore': sim_score}
+            response_dict = {'hashtags': hashtags_list,'score': float(grade)}
 
         else:
-            grade = self.hashtag_model.predict((input_id,attention_mask))[0][0]*10*369*sim_score
-            response_dict = {'hashtags': hashtags_list,'score': float(grade), 'context': 0, 'contextScore': sim_score}
+            grade = self.hashtag_model.predict((input_id,attention_mask))[0][0]*10*369*(1 - sim_score)*-1
+            response_dict = {'hashtags': hashtags_list,'score': float(grade)}
 
         return response_dict
