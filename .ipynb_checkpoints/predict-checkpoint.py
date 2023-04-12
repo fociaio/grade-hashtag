@@ -10,6 +10,7 @@ import tensorflow as tf
 import json
 from sentence_transformers import SentenceTransformer, util
 from cog import BasePredictor, Input
+from lime.lime_text import LimeTextExplainer
 from typing import Any
 
 nltk.download("stopwords")
@@ -69,9 +70,24 @@ class Predictor(BasePredictor):
         hashtags_cleaned = self.extract_hashtags(hashtags_str)
         input_id, attention_mask = self.bert_encode([hashtags_cleaned], 60)
         sim_score = self.get_similarity(concept, hashtags_cleaned)
-        if sim_score >= 0.5:
+        if sim_score >= 0.6:
             grade = self.hashtag_model.predict((input_id,attention_mask))[0][0]*10*369
+            class_names = ['Low engagement', 'High engagement']
+            explainer = LimeTextExplainer(class_names=class_names)
+            exp = explainer.explain_instance(hashtags_cleaned, self.predict_proba_hashtags, num_samples=20000)
+            explainer_dict = [{'word': str(word), 'score': float(score)} for word,score in exp.as_list()]
+            explainer_dict = sorted(explainer_dict, key=itemgetter('score'), reverse=True)
+            explainer_dict =[dict(explainer_dict[i], **{'position':i+1}) for i in range(len(explainer_dict))]
+            response_dict = {'hashtags': hashtags_list,'score': float(grade), 'analysis' :explainer_dict}
+
         else:
-            grade = self.hashtag_model.predict((input_id,attention_mask))[0][0]*10*369*sim_score
-        scored_list = [{'hashtag': hashtag, 'score': float(grade)/len(hashtags_list)} for hashtag in hashtags_list]
-        return scored_list
+            grade = self.hashtag_model.predict((input_id,attention_mask))[0][0]*10*369*(1 - sim_score)*-1
+            class_names = ['Low engagement', 'High engagement']
+            explainer = LimeTextExplainer(class_names=class_names)
+            exp = explainer.explain_instance(hashtags_cleaned, self.predict_proba_hashtags, num_samples=20000)
+            explainer_dict = [{'word': str(word), 'score': float(score)} for word,score in exp.as_list()]
+            explainer_dict = sorted(explainer_dict, key=itemgetter('score'), reverse=True)
+            explainer_dict =[dict(explainer_dict[i], **{'position':i+1}) for i in range(len(explainer_dict))]
+            response_dict = {'hashtags': hashtags_list,'score': float(grade), 'analysis' :explainer_dict}
+
+        return response_dict

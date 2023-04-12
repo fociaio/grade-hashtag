@@ -6,4 +6,5 @@ build:
     - "numpy"
     - "huggingface-hub==0.13.3"
     - "sentence-transformers==2.2.2"
+    - "lime==0.2.0.1"
 predict: "predict.py:Predictor"
