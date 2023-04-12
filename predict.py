@@ -62,16 +62,15 @@ class Predictor(BasePredictor):
     def predict(
         self, 
         concept: str = Input(description="Concept to compare the hashtag generations with"),
-        hashtags: str = Input(description="List of hashtags to grade separated by a comma"),
+        hashtag: str = Input(description="A single hashtag to grade"),
         ) -> Any:
-        hashtags_list = hashtags.split(",")
-        hashtags_str = " ".join(hashtags_list)
-        hashtags_cleaned = self.extract_hashtags(hashtags_str)
+        hashtags_cleaned = self.extract_hashtags(hashtag)
         input_id, attention_mask = self.bert_encode([hashtags_cleaned], 60)
         sim_score = self.get_similarity(concept, hashtags_cleaned)
         if sim_score >= 0.5:
             grade = self.hashtag_model.predict((input_id,attention_mask))[0][0]*10*369
+            response_dict = {'text': hashtag, 'score': float(grade), 'context': 1, 'contextScore': sim_score}
         else:
             grade = self.hashtag_model.predict((input_id,attention_mask))[0][0]*10*369*sim_score
-        scored_list = [{'hashtag': hashtag, 'score': float(grade)/len(hashtags_list)} for hashtag in hashtags_list]
-        return scored_list
+            response_dict = {'text': hashtag, 'score': float(grade), 'context': 1, 'contextScore': sim_score}
+        return response_dict
