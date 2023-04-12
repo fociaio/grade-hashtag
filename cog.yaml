@@ -6,5 +6,5 @@ build:
     - "huggingface-hub==0.13.3"
     - "tensorflow==2.12.0"
     - "sentence-transformers==2.2.2"
-
+    - "lime==0.2.0.1"
 predict: "predict.py:Predictor"
