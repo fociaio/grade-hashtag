@@ -67,10 +67,10 @@ class Predictor(BasePredictor):
         hashtags_cleaned = self.extract_hashtags(hashtag)
         input_id, attention_mask = self.bert_encode([hashtags_cleaned], 60)
         sim_score = self.get_similarity(concept, hashtags_cleaned)
-        if sim_score >= 0.5:
+        if sim_score >= 0.3:
             grade = self.hashtag_model.predict((input_id,attention_mask))[0][0]*10*369
             response_dict = {'text': hashtag, 'score': float(grade), 'context': 1, 'contextScore': sim_score}
         else:
             grade = self.hashtag_model.predict((input_id,attention_mask))[0][0]*10*369*sim_score
-            response_dict = {'text': hashtag, 'score': float(grade), 'context': 1, 'contextScore': sim_score}
+            response_dict = {'text': hashtag, 'score': float(grade), 'context': 0, 'contextScore': sim_score}
         return response_dict
